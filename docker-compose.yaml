@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    hostname: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  web:
+    image: python:3.12-slim
+    working_dir: /app
+    command: >
+      sh -c "cp /tmp/requirements.txt . &&
+             pip install --no-cache-dir -r requirements.txt &&
+             mkdir -p /app/data /app/logs &&
+             uvicorn src.main:app --reload --workers 1 --host 0.0.0.0 --port 8000"
+    env_file:
+      - .env
+    volumes:
+      - ./src/:/app/src/
+      - ./requirements.txt:/tmp/requirements.txt
+    ports:
+      - "8002:8000"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres-data:
