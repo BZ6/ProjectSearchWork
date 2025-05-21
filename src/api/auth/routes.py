@@ -8,7 +8,7 @@ from src.db.models import UserModel, UserRole
 from src.api.users.schema import UserCreate, User
 from src.api.auth.utils import verify_password, get_password_hash, create_access_token, create_refresh_token
 from src.api.auth.utils import SECRET_KEY, ALGORITHM
-from src.api.auth.dependencies import oauth2_scheme
+from src.api.auth.dependencies import oauth2_scheme, get_current_user, require_role
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -55,18 +55,8 @@ def refresh_token(refresh_token: str = Body(...)):
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
 @router.get("/me", response_model=User)
-def get_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get_session)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    user = db.query(UserModel).filter(UserModel.email == email).first()
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return User.from_orm(user)
+def get_me(current_user: UserModel = Depends(get_current_user)):
+    return User.from_orm(current_user)
 
 @router.get("/verify")
 def verify_token(token: str = Depends(oauth2_scheme)):
@@ -78,3 +68,11 @@ def verify_token(token: str = Depends(oauth2_scheme)):
         return {"status": "ok", "email": email}
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+@router.get("/applicant-only")
+def applicant_only_route(user: UserModel = Depends(require_role("соискатель"))):
+    return {"message": f"Hello, {user.name}! Только для соискателей."}
+
+@router.get("/employer-only")
+def employer_only_route(user: UserModel = Depends(require_role("работодатель"))):
+    return {"message": f"Hello, {user.name}! Только для работодателей."}
