@@ -12,8 +12,3 @@ router = SQLAlchemyCRUDRouter(
     db=get_session,
     prefix='users'
 )
-
-
-# router = APIRouter(prefix="/users", tags=["users"])
-
-# router.include_router(users.router)
