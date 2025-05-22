@@ -5,10 +5,9 @@ from src.db.connection import get_session
 from src.db.models import UserModel
 
 
-router = SQLAlchemyCRUDRouter(
+crud_router = SQLAlchemyCRUDRouter(
     schema=User,
     create_schema=UserCreate,
     db_model=UserModel,
     db=get_session,
-    prefix='users'
 )
