@@ -3,14 +3,14 @@ from fastapi.testclient import TestClient
 
 from src.db.models import UserModel, UserRole
 from src.main import app
+from src.db.connection import SessionLocal, init_db
 
 client = TestClient(app)
 
+init_db()
 
 @pytest.fixture
 def db_session():
-    from src.db.connection import SessionLocal, init_db
-    init_db()
     db = SessionLocal()
     try:
         yield db
