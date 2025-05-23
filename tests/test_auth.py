@@ -9,7 +9,8 @@ client = TestClient(app)
 
 @pytest.fixture
 def db_session():
-    from src.db.connection import SessionLocal
+    from src.db.connection import SessionLocal, init_db
+    init_db()
     db = SessionLocal()
     try:
         yield db
