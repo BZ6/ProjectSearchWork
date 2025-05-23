@@ -7,7 +7,11 @@ from sqlalchemy.orm import sessionmaker
 from src.db.models import *
 
 load_dotenv()
-db_url = os.getenv('DB_ADMIN')
+db_user = os.getenv('POSTGRES_USER')
+db_password = os.getenv('POSTGRES_PASSWORD')
+db_name = os.getenv('POSTGRES_DB')
+db_host = os.getenv('POSTGRES_HOST', 'localhost')
+db_url = f"postgresql://{db_user}:{db_password}@{db_host}/{db_name}"
 engine = create_engine(db_url, echo=True)
 SessionLocal = sessionmaker(
     autocommit=False,
