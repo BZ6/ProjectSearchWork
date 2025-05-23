@@ -16,7 +16,6 @@ jobs:
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          DATABASE_HOST: ${{ secrets.POSTGRES_HOST }}
         ports:
           - 5432:5432
         options: >-
@@ -56,4 +55,3 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          DATABASE_HOST: ${{ secrets.POSTGRES_HOST }}
