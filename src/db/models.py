@@ -1,14 +1,16 @@
-from sqlalchemy import Column, String, Enum, Integer, Text, ForeignKey
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
 import enum
 
+from sqlalchemy import Column, String, Enum, Integer, Text, ForeignKey
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 
 Base = declarative_base()
+
 
 class UserRole(enum.Enum):
     APPLICANT = "соискатель"
     EMPLOYER = "работодатель"
+
 
 class UserModel(Base):
     __tablename__ = 'users'
@@ -28,6 +30,7 @@ class UserModel(Base):
     def role(self, value):
         self._role = UserRole(value)
 
+
 class VacancyModel(Base):
     __tablename__ = "vacancies"
     id = Column(Integer, primary_key=True, index=True)
@@ -36,6 +39,7 @@ class VacancyModel(Base):
     employer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     employer = relationship("UserModel", back_populates="vacancies")
+
 
 class ApplicationModel(Base):
     __tablename__ = "applications"

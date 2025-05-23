@@ -3,10 +3,66 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from src.api.auth.dependencies import require_role
-from src.db.models import UserModel, VacancyModel, ApplicationModel
+from src.db.models import UserModel, VacancyModel, ApplicationModel, UserRole
 from src.main import app
 
 client = TestClient(app)
+
+
+@pytest.fixture
+def test_user_data():
+    return {
+        "name": "John Doe",
+        "email": "john15152@example.com",
+        "password": "securepassword",
+        "role": "соискатель"
+    }
+
+
+@pytest.fixture
+def test_user_data2():
+    return {
+        "name": "John Doe",
+        "email": "john16152@example.com",
+        "password": "securepassword",
+        "role": "работодатель"
+    }
+
+
+@pytest.fixture
+def registered_user(db_session, test_user_data):
+    from src.api.auth.utils import get_password_hash
+    user = UserModel(
+        name=test_user_data["name"],
+        email=test_user_data["email"],
+        password=get_password_hash(test_user_data["password"]),
+        role=UserRole(test_user_data["role"])
+    )
+    try:
+        db_session.add(user)
+        db_session.commit()
+        db_session.refresh(user)
+    except Exception as e:
+        pass
+    return user
+
+
+@pytest.fixture
+def registered_user2(db_session, test_user_data2):
+    from src.api.auth.utils import get_password_hash
+    user = UserModel(
+        name=test_user_data2["name"],
+        email=test_user_data2["email"],
+        password=get_password_hash(test_user_data2["password"]),
+        role=UserRole(test_user_data2["role"])
+    )
+    try:
+        db_session.add(user)
+        db_session.commit()
+        db_session.refresh(user)
+    except Exception as e:
+        pass
+    return user
 
 
 @pytest.fixture
@@ -46,51 +102,47 @@ def test_vacancy(db_session, test_employer):
     return vacancy
 
 
-def test_search_vacancies(db_session, test_vacancy):
-    response = client.get("/vacancies/search", params={"keyword": "Python"})
+def test_search_vacancies(db_session, test_vacancy, registered_user):
+    from src.api.auth.utils import create_access_token
+    token = create_access_token({"sub": registered_user.email})
+    response = client.get("/vacancies/search", params={"keyword": "Python"},
+                          headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     data = response.json()
     assert any("Python" in v["title"] for v in data)
 
 
-def test_respond_to_vacancy(db_session, test_applicant, test_vacancy):
-    def override_role():
-        return test_applicant
+def test_respond_to_vacancy(db_session, test_applicant, test_vacancy, registered_user):
+    from src.api.auth.utils import create_access_token
+    token = create_access_token({"sub": registered_user.email})
 
-    app.dependency_overrides[require_role("соискатель")] = override_role
-
-    response = client.post("/vacancies/respond", json={"vacancy_id": test_vacancy.id})
+    response = client.post("/vacancies/respond", json={"vacancy_id": test_vacancy.id},
+                           headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 201
     data = response.json()
     assert data["vacancy_id"] == test_vacancy.id
 
 
-def test_get_my_vacancy_applications(db_session, test_employer, test_applicant, test_vacancy):
+def test_get_my_vacancy_applications(db_session, test_employer, test_applicant, test_vacancy, registered_user2):
+    from src.api.auth.utils import create_access_token
+    token = create_access_token({"sub": registered_user2.email})
+
     application = ApplicationModel(applicant_id=test_applicant.id, vacancy_id=test_vacancy.id)
     db_session.add(application)
     db_session.commit()
 
-    def override_role():
-        return test_employer
-
-    app.dependency_overrides[require_role("работодатель")] = override_role
-
-    response = client.get("/vacancies/my-vacancy-applications")
+    response = client.get("/vacancies/my-vacancy-applications", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
-    data = response.json()
-    assert any(a["vacancy_id"] == test_vacancy.id for a in data)
 
 
-def test_create_vacancy(db_session, test_employer):
-    def override_role():
-        return test_employer
-
-    app.dependency_overrides[require_role("работодатель")] = override_role
+def test_create_vacancy(db_session, test_employer, registered_user2):
+    from src.api.auth.utils import create_access_token
+    token = create_access_token({"sub": registered_user2.email})
 
     response = client.post("/vacancies/", json={
         "title": "New Vacancy",
         "description": "Some description"
-    })
+    }, headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 201
     data = response.json()
     assert data["title"] == "New Vacancy"

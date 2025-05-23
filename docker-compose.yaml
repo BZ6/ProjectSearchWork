@@ -24,6 +24,7 @@ services:
       - .env
     volumes:
       - ./src/:/app/src/
+      - ./tests/:/app/tests/
       - ./requirements.txt:/tmp/requirements.txt
     ports:
       - "8002:8000"

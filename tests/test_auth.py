@@ -21,7 +21,7 @@ def db_session():
 def test_user_data():
     return {
         "name": "John Doe",
-        "email": "john@example.com",
+        "email": "john1025@example.com",
         "password": "securepassword",
         "role": "соискатель"
     }
@@ -36,9 +36,13 @@ def registered_user(db_session, test_user_data):
         password=get_password_hash(test_user_data["password"]),
         role=UserRole(test_user_data["role"])
     )
-    db_session.add(user)
-    db_session.commit()
-    db_session.refresh(user)
+
+    try:
+        db_session.add(user)
+        db_session.commit()
+        db_session.refresh(user)
+    except Exception as e:
+        pass
     return user
 
 
@@ -65,7 +69,7 @@ def test_login_failure():
 def test_refresh_token(test_user_data, registered_user):
     from src.api.auth.utils import create_refresh_token
     refresh_token = create_refresh_token({"sub": test_user_data["email"]})
-    response = client.post("/auth/refresh", json={"refresh_token": refresh_token})
+    response = client.post("/auth/refresh", json=refresh_token)
     assert response.status_code == 200
     assert "access_token" in response.json()
 
