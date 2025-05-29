@@ -1,7 +1,6 @@
 import requests
 from sqlalchemy.orm import Session
 
-from src.db.connection import SessionLocal
 from src.db.models import VacancyModel
 
 HH_API_URL = "https://api.hh.ru/vacancies"
@@ -23,6 +22,7 @@ def fetch_vacancies(text="Python разработчик", pages=1):
 
 def save_vacancies(vacancies: list[dict], db: Session, employer_id: int) -> list[VacancyModel]:
     res = []
+
     for item in vacancies:
         vacancy = VacancyModel(
             title=item["name"],
@@ -31,12 +31,13 @@ def save_vacancies(vacancies: list[dict], db: Session, employer_id: int) -> list
         )
         db.add(vacancy)
         res.append(vacancy)
+
     db.commit()
-    db.close()
+    for v in res:
+        db.refresh(v)
     return res
 
 
-def fetch_and_save(vacancy_name: str, employer_id: int, pages: int) -> list[VacancyModel]:
-    db = SessionLocal()
+def fetch_and_save(db: Session, vacancy_name: str, employer_id: int, pages: int) -> list[VacancyModel]:
     vacancies = fetch_vacancies(vacancy_name, pages)
     return save_vacancies(vacancies, db, employer_id)

@@ -84,11 +84,27 @@ def create_vacancy(
 
 
 # Создание вакансии
-@router.post("/parse", response_model=list[Vacancy], status_code=status.HTTP_201_CREATED)
+@router.post("/parse", response_model=list[Vacancy], status_code=status.HTTP_200_OK)
 def parse_vacancy(
-        vacancy: VacancyParse
+        vacancy: VacancyParse,
+        db: Session = Depends(get_session),
 ):
-    return parser.fetch_and_save(vacancy.vacancy_name, vacancy.employee_id, vacancy.pages)
+    try:
+        vacancies_bd = parser.fetch_and_save(db, vacancy.vacancy_name, vacancy.employee_id, vacancy.pages)
+        res = []
+        for vacancy in vacancies_bd:
+            res.append(
+                Vacancy(
+                    id=vacancy.id,
+                    employer_id=vacancy.employer_id,
+                    title=vacancy.title,
+                    description=vacancy.description
+                )
+            )
+        return res
+    except Exception as e:
+        print(e)
+        return []
 
 
 # CRUD-роутер
