@@ -21,7 +21,8 @@ def fetch_vacancies(text="Python разработчик", pages=1):
     return results
 
 
-def save_vacancies(vacancies: list[dict], db: Session, employer_id: int):
+def save_vacancies(vacancies: list[dict], db: Session, employer_id: int) -> list[VacancyModel]:
+    res = []
     for item in vacancies:
         vacancy = VacancyModel(
             title=item["name"],
@@ -29,11 +30,13 @@ def save_vacancies(vacancies: list[dict], db: Session, employer_id: int):
             employer_id=employer_id
         )
         db.add(vacancy)
+        res.append(vacancy)
     db.commit()
     db.close()
+    return res
 
 
-def fetch_and_save(vacancy_name: str, employer_id: int, pages: int):
+def fetch_and_save(vacancy_name: str, employer_id: int, pages: int) -> list[VacancyModel]:
     db = SessionLocal()
     vacancies = fetch_vacancies(vacancy_name, pages)
-    save_vacancies(vacancies, db, employer_id)
+    return save_vacancies(vacancies, db, employer_id)

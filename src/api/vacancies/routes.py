@@ -1,22 +1,24 @@
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi_crudrouter import SQLAlchemyCRUDRouter
 from sqlalchemy.orm import Session
-from typing import List, Optional
 
-from src.api.vacancies.schema import Application, ApplicationCreate, Vacancy, VacancyCreate
+import src.parser.main as parser
+from src.api.auth.dependencies import require_role
+from src.api.vacancies.schema import Application, ApplicationCreate, Vacancy, VacancyCreate, VacancyParse
 from src.db.connection import get_session
 from src.db.models import ApplicationModel, VacancyModel, UserModel
-from src.api.auth.dependencies import require_role
-
 
 router = APIRouter(prefix="/vacancies", tags=["Vacancies"])
+
 
 # Поиск и фильтрация
 @router.get("/search", response_model=List[Vacancy])
 def search_vacancies(
-    keyword: Optional[str] = Query(None, description="Ключевое слово для поиска"),
-    employer_id: Optional[int] = Query(None, description="ID работодателя"),
-    db: Session = Depends(get_session)
+        keyword: Optional[str] = Query(None, description="Ключевое слово для поиска"),
+        employer_id: Optional[int] = Query(None, description="ID работодателя"),
+        db: Session = Depends(get_session)
 ):
     query = db.query(VacancyModel)
     if keyword:
@@ -28,12 +30,13 @@ def search_vacancies(
         query = query.filter(VacancyModel.employer_id == employer_id)
     return query.all()
 
+
 # Отклики на вакансии
 @router.post("/respond", response_model=Application, status_code=status.HTTP_201_CREATED)
 def respond_to_vacancy(
-    application: ApplicationCreate,
-    db: Session = Depends(get_session),
-    applicant: UserModel = Depends(require_role("соискатель"))
+        application: ApplicationCreate,
+        db: Session = Depends(get_session),
+        applicant: UserModel = Depends(require_role("соискатель"))
 ):
     exists = db.query(ApplicationModel).filter_by(
         applicant_id=applicant.id,
@@ -50,22 +53,24 @@ def respond_to_vacancy(
     db.refresh(db_application)
     return db_application
 
+
 # Отклики на вакансии работодателя
 @router.get("/my-vacancy-applications", response_model=List[Application])
 def get_my_vacancy_applications(
-    db: Session = Depends(get_session),
-    employer = Depends(require_role("работодатель"))
+        db: Session = Depends(get_session),
+        employer=Depends(require_role("работодатель"))
 ):
     vacancy_ids = db.query(VacancyModel.id).filter(VacancyModel.employer_id == employer.id).subquery()
     applications = db.query(ApplicationModel).filter(ApplicationModel.vacancy_id.in_(vacancy_ids)).all()
     return applications
 
+
 # Создание вакансии
 @router.post("/", response_model=Vacancy, status_code=status.HTTP_201_CREATED)
 def create_vacancy(
-    vacancy: VacancyCreate,
-    db: Session = Depends(get_session),
-    employer: UserModel = Depends(require_role("работодатель"))
+        vacancy: VacancyCreate,
+        db: Session = Depends(get_session),
+        employer: UserModel = Depends(require_role("работодатель"))
 ):
     db_vacancy = VacancyModel(
         title=vacancy.title,
@@ -77,6 +82,15 @@ def create_vacancy(
     db.refresh(db_vacancy)
     return db_vacancy
 
+
+# Создание вакансии
+@router.post("/parse", response_model=list[Vacancy], status_code=status.HTTP_201_CREATED)
+def parse_vacancy(
+        vacancy: VacancyParse
+):
+    return parser.fetch_and_save(vacancy.vacancy_name, vacancy.employee_id, vacancy.pages)
+
+
 # CRUD-роутер
 crud_router = SQLAlchemyCRUDRouter(
     schema=Vacancy,
@@ -85,4 +99,3 @@ crud_router = SQLAlchemyCRUDRouter(
     db=get_session,
     create_route=False,
 )
-

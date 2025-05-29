@@ -1,8 +1,10 @@
 from pydantic import BaseModel
 
+
 class VacancyCreate(BaseModel):
     title: str
     description: str
+
 
 class Vacancy(VacancyCreate):
     id: int
@@ -11,8 +13,10 @@ class Vacancy(VacancyCreate):
     class Config:
         orm_mode = True
 
+
 class ApplicationCreate(BaseModel):
     vacancy_id: int
+
 
 class Application(BaseModel):
     id: int
@@ -21,4 +25,9 @@ class Application(BaseModel):
 
     class Config:
         orm_mode = True
-        
+
+
+class VacancyParse(BaseModel):
+    vacancy_name: str
+    employee_id: int
+    pages: int
