@@ -45,9 +45,13 @@ docker-compose up --build
   
 ![alt text](img/image9.png)
 
-Для доступа к API (после запуска в Docker): http://127.0.0.1:8002/docs
+- Есть парсинг вакансий с hh.ru
+
+![alt text](img/image10.png)
+
+Для доступа к API (после запуска в Docker): <http://127.0.0.1:8002/docs>
 
 ## Инструменты
 
-- Для CRUD используется: https://fastapi-crudrouter.awtkns.com/
+- Для CRUD используется: <https://fastapi-crudrouter.awtkns.com/>
 - Для работы с ролями (авторизация, регистрация) будет юзаться: OAuth2
